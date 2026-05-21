@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel Administrativo</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="admin-body">
+  <nav class="navbar navbar-expand-lg glass-nav sticky-top">
+    <div class="container">
+      <span class="navbar-brand">Painel Administrativo</span>
+      <div class="d-flex gap-2">
+        <a href="index.html" class="btn btn-outline-light btn-sm">Ver site</a>
+        <a href="/api/logout" class="btn btn-light btn-sm">Sair</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container py-4">
+    <ul class="nav nav-pills admin-tabs mb-4" id="admin-tabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="tab-config" data-bs-toggle="pill" data-bs-target="#pane-config" type="button" role="tab">Pagina inicial</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-noticias" data-bs-toggle="pill" data-bs-target="#pane-noticias" type="button" role="tab">Noticias</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-plantoes" data-bs-toggle="pill" data-bs-target="#pane-plantoes" type="button" role="tab">Plantoes</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-enquete" data-bs-toggle="pill" data-bs-target="#pane-enquete" type="button" role="tab">Enquete</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-jogos" data-bs-toggle="pill" data-bs-target="#pane-jogos" type="button" role="tab">Jogos</button>
+      </li>
+    </ul>
+
+    <div class="tab-content">
+      <section class="tab-pane fade show active" id="pane-config" role="tabpanel" aria-labelledby="tab-config">
+        <form id="form-config">
+          <input type="hidden" id="remover-logo" name="removerLogo" value="false">
+          <input type="hidden" id="remover-imagem-padrao" name="removerImagemPadrao" value="false">
+
+          <div class="row g-4">
+            <section class="col-lg-5">
+              <div class="admin-panel">
+                <div class="section-heading">
+                  <span>Identidade do portal</span>
+                  <small>nome, cores e imagens</small>
+                </div>
+                <div class="mb-3">
+                  <label for="nomePortal" class="form-label">Nome do portal</label>
+                  <input type="text" id="nomePortal" name="nomePortal" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                  <label for="slogan" class="form-label">Slogan</label>
+                  <input type="text" id="slogan" name="slogan" class="form-control">
+                </div>
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label for="corPrincipal" class="form-label">Cor principal</label>
+                    <input type="color" id="corPrincipal" name="corPrincipal" class="form-control form-control-color" value="#2f3a44">
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label for="corAcento" class="form-label">Cor de acento</label>
+                    <input type="color" id="corAcento" name="corAcento" class="form-control form-control-color" value="#0f766e">
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label for="logo" class="form-label">Logo</label>
+                  <input type="file" id="logo" name="logo" class="form-control" accept="image/*">
+                  <div id="preview-logo" class="image-preview compact mt-2 d-none"></div>
+                  <button type="button" id="btn-remover-logo" class="btn btn-outline-danger btn-sm mt-2 d-none">Remover logo</button>
+                </div>
+                <div class="mb-3">
+                  <label for="imagemPadrao" class="form-label">Imagem padrao das noticias</label>
+                  <input type="file" id="imagemPadrao" name="imagemPadrao" class="form-control" accept="image/*">
+                  <div id="preview-imagem-padrao" class="image-preview mt-2 d-none"></div>
+                  <button type="button" id="btn-remover-imagem-padrao" class="btn btn-outline-danger btn-sm mt-2 d-none">Remover imagem padrao</button>
+                </div>
+              </div>
+            </section>
+
+            <section class="col-lg-7">
+              <div class="admin-panel mb-4">
+                <div class="section-heading">
+                  <span>O que exibir na index</span>
+                  <small>marque os blocos visiveis na pagina inicial</small>
+                </div>
+                <p class="home-help">Use o painel <strong>Carrossel da index</strong> abaixo para escolher exatamente quais noticias aparecem e em qual ordem.</p>
+                <div class="home-switches">
+                  <label><input type="checkbox" id="mostrarTicker" name="mostrarTicker"> Plantao (faixa no topo)</label>
+                  <label><input type="checkbox" id="mostrarBusca" name="mostrarBusca"> Busca e filtros</label>
+                  <label><input type="checkbox" id="mostrarCarrossel" name="mostrarCarrossel"> Carrossel de destaques</label>
+                  <label><input type="checkbox" id="mostrarUltimas" name="mostrarUltimas"> Lista de ultimas noticias</label>
+                  <label><input type="checkbox" id="mostrarMaisLidas" name="mostrarMaisLidas"> Widget mais lidas</label>
+                  <label><input type="checkbox" id="mostrarJogos" name="mostrarJogos"> Widget agenda de jogos</label>
+                  <label><input type="checkbox" id="mostrarEnquete" name="mostrarEnquete"> Widget enquete</label>
+                </div>
+                <div class="row mt-3">
+                  <div class="col-md-4 mb-3">
+                    <label for="limiteCarrossel" class="form-label">Slides no carrossel</label>
+                    <input type="number" min="1" max="5" id="limiteCarrossel" name="limiteCarrossel" class="form-control">
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label for="limiteNoticias" class="form-label">Noticias por pagina</label>
+                    <input type="number" min="1" max="24" id="limiteNoticias" name="limiteNoticias" class="form-control">
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label for="limiteJogos" class="form-label">Jogos no widget</label>
+                    <input type="number" min="1" max="10" id="limiteJogos" name="limiteJogos" class="form-control">
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label for="temaCarrossel" class="form-label">Visual do carrossel</label>
+                  <select id="temaCarrossel" name="temaCarrossel" class="form-select">
+                    <option value="claro">Claro (recomendado)</option>
+                    <option value="escuro">Escuro</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="admin-panel">
+                <div class="section-heading">
+                  <span>Previa da index</span>
+                  <small>blocos ativos na pagina inicial</small>
+                </div>
+                <div id="preview-layout-home" class="home-layout-preview"></div>
+              </div>
+            </section>
+          </div>
+
+          <section class="col-12">
+            <div class="admin-panel">
+              <div class="section-heading">
+                <span>Carrossel da index</span>
+                <small>selecione as noticias e defina a ordem de exibicao</small>
+              </div>
+              <input type="hidden" id="carrosselIds" name="carrosselIds" value="[]">
+
+              <div class="row g-4">
+                <div class="col-lg-6">
+                  <div class="carousel-picker-head">
+                    <strong>No carrossel</strong>
+                    <span id="carrossel-contador" class="carousel-picker-count">0 / 5</span>
+                  </div>
+                  <div id="carrossel-selecionados" class="carousel-picker-list"></div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="carousel-picker-head">
+                    <strong>Adicionar noticia</strong>
+                    <span class="carousel-picker-hint">somente publicadas</span>
+                  </div>
+                  <input type="search" id="carrossel-busca" class="form-control mb-2" placeholder="Buscar por titulo ou categoria">
+                  <div id="carrossel-disponiveis" class="carousel-picker-list carousel-picker-list--scroll"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div class="config-actions">
+            <a href="index.html" target="_blank" rel="noopener" class="btn btn-outline-secondary">Abrir index em nova aba</a>
+            <button type="submit" class="btn btn-accent">Salvar configuracao da pagina inicial</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="tab-pane fade" id="pane-noticias" role="tabpanel" aria-labelledby="tab-noticias">
+    <div class="row g-4">
+      <section class="col-lg-5">
+        <div class="admin-panel">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h1 id="titulo-form">Nova noticia</h1>
+            <button type="button" id="btn-cancelar" class="btn btn-outline-secondary btn-sm d-none">Cancelar</button>
+          </div>
+
+          <form id="form-noticia">
+            <input type="hidden" id="noticia-id">
+            <input type="hidden" id="remover-imagem" name="removerImagem" value="false">
+            <div class="mb-3">
+              <label for="titulo" class="form-label">Titulo</label>
+              <input type="text" id="titulo" name="titulo" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label for="resumo" class="form-label">Resumo</label>
+              <textarea id="resumo" name="resumo" class="form-control" rows="3" required></textarea>
+            </div>
+            <div class="mb-3">
+              <label for="conteudo" class="form-label">Texto da materia</label>
+              <textarea id="conteudo" name="conteudo" class="form-control" rows="8" required></textarea>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="categoria" class="form-label">Categoria</label>
+                <input type="text" id="categoria" name="categoria" class="form-control" value="Geral">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="autor" class="form-label">Autor</label>
+                <input type="text" id="autor" name="autor" class="form-control" value="Redacao">
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="tags" class="form-label">Tags</label>
+                <input type="text" id="tags" name="tags" class="form-control" placeholder="ex: politica, economia">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="status" class="form-label">Status</label>
+                <select id="status" name="status" class="form-select">
+                  <option value="publicado">Publicado</option>
+                  <option value="rascunho">Rascunho</option>
+                </select>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="imagem" class="form-label">Imagem</label>
+              <input type="file" id="imagem" name="imagem" class="form-control" accept="image/*">
+              <div id="preview-imagem" class="image-preview mt-2 d-none"></div>
+              <button type="button" id="btn-remover-imagem" class="btn btn-outline-danger btn-sm mt-2 d-none">Remover imagem</button>
+            </div>
+            <div class="form-check form-switch mb-4">
+              <input class="form-check-input" type="checkbox" id="destaque" name="destaque">
+              <label class="form-check-label" for="destaque">Destacar no carrossel</label>
+            </div>
+            <button type="submit" id="btn-submit" class="btn btn-accent w-100">Publicar noticia</button>
+          </form>
+        </div>
+      </section>
+
+      <section class="col-lg-7">
+        <div class="admin-panel">
+          <div class="section-heading">
+            <span>Noticias cadastradas</span>
+            <small id="admin-count"></small>
+          </div>
+          <div class="table-responsive">
+            <table class="table align-middle">
+              <thead>
+                <tr>
+                  <th>Titulo</th>
+                  <th>Categoria</th>
+                  <th>Views</th>
+                  <th class="text-end">Acoes</th>
+                </tr>
+              </thead>
+              <tbody id="lista-admin-noticias"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+      </section>
+
+      <section class="tab-pane fade" id="pane-plantoes" role="tabpanel" aria-labelledby="tab-plantoes">
+        <div class="row g-4">
+          <section class="col-lg-5">
+            <div class="admin-panel">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1 id="titulo-form-plantao">Novo plantao</h1>
+                <button type="button" id="btn-cancelar-plantao" class="btn btn-outline-secondary btn-sm d-none">Cancelar</button>
+              </div>
+              <form id="form-plantao">
+                <input type="hidden" id="plantao-id">
+                <div class="mb-3">
+                  <label for="plantao-texto" class="form-label">Texto</label>
+                  <textarea id="plantao-texto" class="form-control" rows="4" required></textarea>
+                </div>
+                <div class="mb-3">
+                  <label for="plantao-link" class="form-label">Link opcional</label>
+                  <input type="url" id="plantao-link" class="form-control" placeholder="https://...">
+                </div>
+                <div class="form-check form-switch mb-4">
+                  <input class="form-check-input" type="checkbox" id="plantao-ativo" checked>
+                  <label class="form-check-label" for="plantao-ativo">Ativo no ticker</label>
+                </div>
+                <button type="submit" id="btn-submit-plantao" class="btn btn-accent w-100">Salvar plantao</button>
+              </form>
+            </div>
+          </section>
+          <section class="col-lg-7">
+            <div class="admin-panel">
+              <div class="section-heading">
+                <span>Plantoes cadastrados</span>
+                <small id="plantoes-count"></small>
+              </div>
+              <div id="lista-plantoes-admin"></div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="tab-pane fade" id="pane-enquete" role="tabpanel" aria-labelledby="tab-enquete">
+        <div class="admin-panel">
+          <div class="section-heading">
+            <span>Gestao da enquete</span>
+            <small>as opcoes reiniciam a contagem ao salvar</small>
+          </div>
+          <form id="form-enquete" class="row g-3">
+            <div class="col-lg-5">
+              <label for="pergunta-enquete" class="form-label">Pergunta</label>
+              <input type="text" id="pergunta-enquete" class="form-control" required>
+            </div>
+            <div class="col-lg-5">
+              <label for="opcoes-enquete" class="form-label">Opcoes separadas por virgula</label>
+              <input type="text" id="opcoes-enquete" class="form-control" required>
+            </div>
+            <div class="col-lg-2 d-flex align-items-end">
+              <button type="submit" class="btn btn-accent w-100">Salvar</button>
+            </div>
+          </form>
+          <div id="preview-enquete" class="mt-4"></div>
+        </div>
+      </section>
+
+      <section class="tab-pane fade" id="pane-jogos" role="tabpanel" aria-labelledby="tab-jogos">
+        <div class="row g-4">
+          <section class="col-lg-5">
+            <div class="admin-panel">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1 id="titulo-form-jogo">Novo jogo</h1>
+                <button type="button" id="btn-cancelar-jogo" class="btn btn-outline-secondary btn-sm d-none">Cancelar</button>
+              </div>
+              <form id="form-jogo">
+                <input type="hidden" id="jogo-id">
+                <div class="mb-3">
+                  <label for="campeonato" class="form-label">Campeonato</label>
+                  <input type="text" id="campeonato" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                  <label for="dataHora" class="form-label">Data e hora</label>
+                  <input type="datetime-local" id="dataHora" class="form-control" required>
+                </div>
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label for="mandante" class="form-label">Mandante</label>
+                    <input type="text" id="mandante" class="form-control" required>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label for="visitante" class="form-label">Visitante</label>
+                    <input type="text" id="visitante" class="form-control" required>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label for="placarMandante" class="form-label">Placar mandante</label>
+                    <input type="number" id="placarMandante" class="form-control" min="0">
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label for="placarVisitante" class="form-label">Placar visitante</label>
+                    <input type="number" id="placarVisitante" class="form-control" min="0">
+                  </div>
+                </div>
+                <button type="submit" id="btn-submit-jogo" class="btn btn-accent w-100">Salvar jogo</button>
+              </form>
+            </div>
+          </section>
+          <section class="col-lg-7">
+            <div class="admin-panel">
+              <div class="section-heading">
+                <span>Jogos cadastrados</span>
+                <small id="jogos-count"></small>
+              </div>
+              <div id="lista-jogos-admin"></div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

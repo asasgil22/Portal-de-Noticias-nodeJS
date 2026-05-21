@@ -1,0 +1,50 @@
+[
+  {
+    "id": "1001",
+    "titulo": "Portal estreia com painel administrativo integrado",
+    "resumo": "A primeira versao consolida noticias, imagens, carrossel e gestao de conteudo em JSON.",
+    "conteudo": "O portal foi estruturado para funcionar sem banco de dados tradicional. As noticias sao salvas em arquivos JSON, enquanto o painel administrativo permite cadastrar, editar, destacar no carrossel e excluir publicacoes. Essa abordagem facilita o estudo do projeto e reduz a complexidade inicial da infraestrutura.",
+    "categoria": "Institucional",
+    "autor": "Redacao",
+    "destaqueCarousel": true,
+    "data": "2026-05-21T08:00:00.000Z",
+    "imagemUrl": "",
+    "visualizacoes": 23
+  },
+  {
+    "id": "1002",
+    "titulo": "Bootstrap deixa a experiencia mais limpa e responsiva",
+    "resumo": "Componentes modernos ajudam o portal a funcionar bem em telas grandes e celulares.",
+    "conteudo": "A interface usa Bootstrap para organizar o grid, formularios, navegacao, botoes e componentes responsivos. O resultado e uma base visual consistente, com foco em leitura, hierarquia e manutencao simples.",
+    "categoria": "Tecnologia",
+    "autor": "Redacao",
+    "destaqueCarousel": true,
+    "data": "2026-05-20T15:30:00.000Z",
+    "imagemUrl": "",
+    "visualizacoes": 15
+  },
+  {
+    "id": "1003",
+    "titulo": "Widgets aumentam a permanencia do leitor",
+    "resumo": "Mais lidas, enquete, proximos jogos e plantao completam a lateral do portal.",
+    "conteudo": "A home combina a lista principal de noticias com widgets laterais pensados para consulta rapida. Eles trazem movimento editorial e ajudam o leitor a descobrir novos conteudos sem abandonar a pagina inicial.",
+    "categoria": "Produto",
+    "autor": "Redacao",
+    "destaqueCarousel": false,
+    "data": "2026-05-19T18:45:00.000Z",
+    "imagemUrl": "",
+    "visualizacoes": 31
+  },
+  {
+    "id": "1004",
+    "titulo": "Login protege a area de publicacao",
+    "resumo": "O painel administrativo exige sessao ativa antes de liberar criacao e edicao.",
+    "conteudo": "O servidor utiliza sessoes do Express para proteger a pagina administrativa e as rotas que alteram dados. Visitantes podem ler as noticias normalmente, mas apenas usuarios autenticados conseguem modificar o conteudo.",
+    "categoria": "Seguranca",
+    "autor": "Redacao",
+    "destaqueCarousel": false,
+    "data": "2026-05-18T11:20:00.000Z",
+    "imagemUrl": "",
+    "visualizacoes": 9
+  }
+]

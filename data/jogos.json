@@ -1,0 +1,20 @@
+[
+  {
+    "id": "1",
+    "campeonato": "Campeonato Brasileiro",
+    "dataHora": "2026-05-24T16:00",
+    "mandante": "BOT",
+    "visitante": "SAO",
+    "placarMandante": null,
+    "placarVisitante": null
+  },
+  {
+    "id": "1779369329620",
+    "campeonato": "Campeonato Brasileiro",
+    "dataHora": "2026-05-27T21:15",
+    "mandante": "BOT",
+    "visitante": "CRU",
+    "placarMandante": null,
+    "placarVisitante": null
+  }
+]

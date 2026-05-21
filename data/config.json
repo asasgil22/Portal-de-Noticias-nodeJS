@@ -1,0 +1,26 @@
+{
+  "nomePortal": "GloriosoNet",
+  "slogan": "Aqui o torcedor Alvinegro sempre estará em primero lugar",
+  "corPrincipal": "#121212",
+  "corAcento": "#eeea8c",
+  "logoUrl": "",
+  "imagemPadraoUrl": "",
+  "home": {
+    "mostrarTicker": false,
+    "mostrarBusca": false,
+    "mostrarCarrossel": true,
+    "mostrarUltimas": true,
+    "mostrarMaisLidas": true,
+    "mostrarJogos": true,
+    "mostrarEnquete": true,
+    "limiteNoticias": 6,
+    "limiteJogos": 3,
+    "limiteCarrossel": 5,
+    "temaCarrossel": "claro",
+    "carrosselIds": [
+      "1779369210485",
+      "1002",
+      "1001"
+    ]
+  }
+}

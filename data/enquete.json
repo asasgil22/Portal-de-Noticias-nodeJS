@@ -1,0 +1,8 @@
+{
+  "pergunta": "Danilo deve seguir jogando no Botafogo ?",
+  "opcoes": {
+    "Sim": 3,
+    "Não": 2,
+    "Tanto Faz": 2
+  }
+}
