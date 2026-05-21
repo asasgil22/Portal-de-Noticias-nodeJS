@@ -2,8 +2,20 @@
   "nomePortal": "GloriosoNet",
   "slogan": "Aqui o torcedor Alvinegro sempre estará em primero lugar",
   "corPrincipal": "#121212",
-  "corAcento": "#eeea8c",
+  "corAcento": "#f7f7f7",
   "logoUrl": "",
+  "bannerMarcaUrl": "/uploads/1779382403135-570438026.png",
+  "modoMarca": "banner",
+  "alturaBannerMarca": 36,
+  "mostrarTextoMarca": true,
+  "fundoHeaderTipo": "cor",
+  "fundoHeaderCor": "#121212",
+  "fundoHeaderImagemUrl": "",
+  "fundoHeaderOverlay": 35,
+  "fundoSiteTipo": "cor",
+  "fundoSiteCor": "#f5f5f5",
+  "fundoSiteImagemUrl": "",
+  "fundoSiteOverlay": 0,
   "imagemPadraoUrl": "",
   "home": {
     "mostrarTicker": false,
@@ -13,10 +25,38 @@
     "mostrarMaisLidas": true,
     "mostrarJogos": true,
     "mostrarEnquete": true,
-    "limiteNoticias": 6,
-    "limiteJogos": 3,
+    "limiteNoticias": 12,
+    "limiteJogos": 6,
     "limiteCarrossel": 5,
     "temaCarrossel": "claro",
+    "modeloCarrossel": "compacto",
+    "alturaCarrossel": "extra",
+    "autoplayCarrossel": 6,
+    "mostrarResumoCarrossel": false,
+    "mostrarMiniaturasCarrossel": false,
+    "mostrarContadorCarrossel": false,
+    "mostrarSetasCarrossel": false,
+    "mostrarDotsCarrossel": true,
+    "widgets": {
+      "maisLidas": {
+        "titulo": "Mais lidas",
+        "subtitulo": "As materias com maior audiencia",
+        "icone": "estrela",
+        "layout": "lista"
+      },
+      "jogos": {
+        "titulo": "Agenda de jogos",
+        "subtitulo": "Proximos confrontos e placares",
+        "icone": "estrela",
+        "layout": "cards"
+      },
+      "enquete": {
+        "titulo": "Enquete",
+        "subtitulo": "Participe da pesquisa do portal",
+        "icone": "estrela",
+        "layout": "barras"
+      }
+    },
     "carrosselIds": [
       "1779369210485",
       "1002",

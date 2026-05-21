@@ -4,9 +4,14 @@ const btnCancelar = document.getElementById('btn-cancelar');
 const btnSubmit = document.getElementById('btn-submit');
 const tituloForm = document.getElementById('titulo-form');
 const inputImagem = document.getElementById('imagem');
+const inputImagemUrl = document.getElementById('imagemUrl');
 const previewImagem = document.getElementById('preview-imagem');
 const btnRemoverImagem = document.getElementById('btn-remover-imagem');
 const removerImagem = document.getElementById('remover-imagem');
+const conteudoCampo = document.getElementById('conteudo');
+const conteudoEditor = document.getElementById('conteudo-editor');
+const editorToolbar = document.getElementById('editor-toolbar');
+let fonteImagemAtual = 'upload';
 
 const formEnquete = document.getElementById('form-enquete');
 const formJogo = document.getElementById('form-jogo');
@@ -28,6 +33,8 @@ const HOME_SWITCH_IDS = [
 ];
 
 document.addEventListener('DOMContentLoaded', () => {
+  inicializarEditorTexto();
+  inicializarFonteImagem();
   carregarConfigAdmin();
   carregarListaAdmin();
   carregarPlantoesAdmin();
@@ -37,6 +44,15 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById(id)?.addEventListener('change', renderizarPreviewLayout);
   });
   document.getElementById('temaCarrossel')?.addEventListener('change', renderizarPreviewLayout);
+  document.getElementById('alturaCarrossel')?.addEventListener('change', renderizarPreviewLayout);
+  document.getElementById('autoplayCarrossel')?.addEventListener('change', renderizarPreviewLayout);
+  document.getElementById('mostrarResumoCarrossel')?.addEventListener('change', renderizarPreviewLayout);
+  document.getElementById('mostrarMiniaturasCarrossel')?.addEventListener('change', renderizarPreviewLayout);
+  ['mostrarDotsCarrossel', 'mostrarContadorCarrossel', 'mostrarSetasCarrossel'].forEach((id) => {
+    document.getElementById(id)?.addEventListener('change', renderizarPreviewLayout);
+  });
+  montarGradeModelosCarrossel();
+  montarFormularioWidgetsAdmin();
   document.getElementById('limiteCarrossel')?.addEventListener('change', () => {
     ajustarLimiteCarrossel();
     renderizarSeletorCarrossel();
@@ -50,6 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
 form.addEventListener('submit', salvarNoticia);
 btnCancelar.addEventListener('click', limparFormulario);
 inputImagem.addEventListener('change', atualizarPreviewArquivo);
+inputImagemUrl?.addEventListener('input', atualizarPreviewUrl);
 btnRemoverImagem.addEventListener('click', marcarImagemParaRemocao);
 formEnquete.addEventListener('submit', salvarEnquete);
 formJogo.addEventListener('submit', salvarJogo);
@@ -58,9 +75,54 @@ formConfig.addEventListener('submit', salvarConfig);
 formPlantao.addEventListener('submit', salvarPlantao);
 btnCancelarPlantao.addEventListener('click', limparFormularioPlantao);
 document.getElementById('logo').addEventListener('change', () => previewArquivo('logo', 'preview-logo', 'btn-remover-logo', 'remover-logo'));
+document.getElementById('bannerMarca').addEventListener('change', () => previewArquivo('bannerMarca', 'preview-banner-marca', 'btn-remover-banner-marca', 'remover-banner-marca'));
+document.getElementById('bannerMarcaUrl').addEventListener('input', previewBannerUrl);
 document.getElementById('imagemPadrao').addEventListener('change', () => previewArquivo('imagemPadrao', 'preview-imagem-padrao', 'btn-remover-imagem-padrao', 'remover-imagem-padrao'));
 document.getElementById('btn-remover-logo').addEventListener('click', () => removerPreview('logo', 'preview-logo', 'btn-remover-logo', 'remover-logo'));
+document.getElementById('btn-remover-banner-marca').addEventListener('click', () => {
+  removerPreview('bannerMarca', 'preview-banner-marca', 'btn-remover-banner-marca', 'remover-banner-marca');
+  const urlBanner = document.getElementById('bannerMarcaUrl');
+  if (urlBanner) urlBanner.value = '';
+});
 document.getElementById('btn-remover-imagem-padrao').addEventListener('click', () => removerPreview('imagemPadrao', 'preview-imagem-padrao', 'btn-remover-imagem-padrao', 'remover-imagem-padrao'));
+document.getElementById('modoMarca')?.addEventListener('change', atualizarAjudaMarca);
+document.getElementById('alturaBannerMarca')?.addEventListener('input', (event) => {
+  document.getElementById('altura-banner-valor').textContent = event.target.value;
+});
+document.querySelectorAll('[data-fundo-header]').forEach((botao) => {
+  botao.addEventListener('click', () => alternarFundoHeader(botao.dataset.fundoHeader));
+});
+document.getElementById('fundoSiteTipo')?.addEventListener('change', alternarFundoSite);
+document.getElementById('fundoHeader')?.addEventListener('change', () => {
+  previewArquivo('fundoHeader', 'preview-fundo-header', 'btn-remover-fundo-header', 'remover-fundo-header');
+  alternarFundoHeader('imagem');
+  aplicarTemaPortal(lerTemaPreview());
+});
+document.getElementById('fundoHeaderUrl')?.addEventListener('input', previewFundoHeaderUrl);
+document.getElementById('fundoSite')?.addEventListener('change', () => {
+  previewArquivo('fundoSite', 'preview-fundo-site', 'btn-remover-fundo-site', 'remover-fundo-site');
+  document.getElementById('fundoSiteTipo').value = 'imagem';
+  alternarFundoSite();
+  aplicarTemaPortal(lerTemaPreview());
+});
+document.getElementById('fundoSiteUrl')?.addEventListener('input', previewFundoSiteUrl);
+document.getElementById('btn-remover-fundo-header')?.addEventListener('click', () => {
+  removerPreview('fundoHeader', 'preview-fundo-header', 'btn-remover-fundo-header', 'remover-fundo-header');
+  document.getElementById('fundoHeaderUrl').value = '';
+});
+document.getElementById('btn-remover-fundo-site')?.addEventListener('click', () => {
+  removerPreview('fundoSite', 'preview-fundo-site', 'btn-remover-fundo-site', 'remover-fundo-site');
+  document.getElementById('fundoSiteUrl').value = '';
+});
+document.getElementById('fundoHeaderOverlay')?.addEventListener('input', (event) => {
+  document.getElementById('fundo-header-overlay-valor').textContent = event.target.value;
+});
+document.getElementById('fundoSiteOverlay')?.addEventListener('input', (event) => {
+  document.getElementById('fundo-site-overlay-valor').textContent = event.target.value;
+});
+document.getElementById('fundoHeaderCor')?.addEventListener('input', () => aplicarTemaPortal(lerTemaPreview()));
+document.getElementById('corPrincipal')?.addEventListener('input', () => aplicarTemaPortal(lerTemaPreview()));
+document.getElementById('corAcento')?.addEventListener('input', () => aplicarTemaPortal(lerTemaPreview()));
 
 async function carregarConfigAdmin() {
   const resposta = await fetch('/api/config');
@@ -73,6 +135,48 @@ async function carregarConfigAdmin() {
   document.getElementById('limiteJogos').value = configCache.home?.limiteJogos || 3;
   document.getElementById('limiteCarrossel').value = configCache.home?.limiteCarrossel || 5;
   document.getElementById('temaCarrossel').value = configCache.home?.temaCarrossel === 'escuro' ? 'escuro' : 'claro';
+  document.getElementById('modeloCarrossel').value = configCache.home?.modeloCarrossel || 'editorial';
+  document.getElementById('alturaCarrossel').value = configCache.home?.alturaCarrossel || 'medio';
+  document.getElementById('autoplayCarrossel').value = configCache.home?.autoplayCarrossel || 6;
+  document.getElementById('mostrarResumoCarrossel').checked = configCache.home?.mostrarResumoCarrossel !== false;
+  document.getElementById('mostrarMiniaturasCarrossel').checked = configCache.home?.mostrarMiniaturasCarrossel !== false;
+  document.getElementById('mostrarDotsCarrossel').checked = configCache.home?.mostrarDotsCarrossel !== false;
+  document.getElementById('mostrarContadorCarrossel').checked = configCache.home?.mostrarContadorCarrossel !== false;
+  document.getElementById('mostrarSetasCarrossel').checked = configCache.home?.mostrarSetasCarrossel !== false;
+  preencherFormularioWidgetsAdmin(configCache);
+  document.getElementById('modoMarca').value = configCache.modoMarca || 'texto';
+  document.getElementById('alturaBannerMarca').value = configCache.alturaBannerMarca || 52;
+  document.getElementById('altura-banner-valor').textContent = configCache.alturaBannerMarca || 52;
+  document.getElementById('mostrarTextoMarca').checked = configCache.mostrarTextoMarca !== false;
+  if (configCache.bannerMarcaUrl) {
+    document.getElementById('bannerMarcaUrl').value = /^https?:\/\//i.test(configCache.bannerMarcaUrl)
+      ? configCache.bannerMarcaUrl
+      : '';
+    mostrarPreviewGenerico('preview-banner-marca', 'btn-remover-banner-marca', configCache.bannerMarcaUrl, 'Banner da marca');
+  }
+
+  alternarFundoHeader(configCache.fundoHeaderTipo || 'cor');
+  document.getElementById('fundoHeaderCor').value = configCache.fundoHeaderCor || configCache.corPrincipal || '#121212';
+  document.getElementById('fundoHeaderOverlay').value = configCache.fundoHeaderOverlay ?? 35;
+  document.getElementById('fundo-header-overlay-valor').textContent = configCache.fundoHeaderOverlay ?? 35;
+  if (configCache.fundoHeaderImagemUrl) {
+    if (/^https?:\/\//i.test(configCache.fundoHeaderImagemUrl)) {
+      document.getElementById('fundoHeaderUrl').value = configCache.fundoHeaderImagemUrl;
+    }
+    mostrarPreviewGenerico('preview-fundo-header', 'btn-remover-fundo-header', configCache.fundoHeaderImagemUrl, 'Fundo do header');
+  }
+  document.getElementById('fundoSiteTipo').value = configCache.fundoSiteTipo || 'padrao';
+  document.getElementById('fundoSiteCor').value = configCache.fundoSiteCor || '#f7f8fa';
+  document.getElementById('fundoSiteOverlay').value = configCache.fundoSiteOverlay ?? 0;
+  document.getElementById('fundo-site-overlay-valor').textContent = configCache.fundoSiteOverlay ?? 0;
+  if (configCache.fundoSiteImagemUrl) {
+    if (/^https?:\/\//i.test(configCache.fundoSiteImagemUrl)) {
+      document.getElementById('fundoSiteUrl').value = configCache.fundoSiteImagemUrl;
+    }
+    mostrarPreviewGenerico('preview-fundo-site', 'btn-remover-fundo-site', configCache.fundoSiteImagemUrl, 'Fundo do site');
+  }
+  alternarFundoSite();
+  aplicarTemaPortal(configCache);
 
   HOME_SWITCH_IDS.forEach((id) => {
     document.getElementById(id).checked = configCache.home?.[id] !== false;
@@ -80,8 +184,104 @@ async function carregarConfigAdmin() {
 
   if (configCache.logoUrl) mostrarPreviewGenerico('preview-logo', 'btn-remover-logo', configCache.logoUrl, configCache.nomePortal);
   if (configCache.imagemPadraoUrl) mostrarPreviewGenerico('preview-imagem-padrao', 'btn-remover-imagem-padrao', configCache.imagemPadraoUrl, 'Imagem padrao');
+  marcarModeloCarrosselAtivo(configCache.home?.modeloCarrossel || 'editorial');
+  atualizarAjudaMarca();
   await inicializarSeletorCarrossel();
   renderizarPreviewLayout();
+}
+
+function montarGradeModelosCarrossel() {
+  const grid = document.getElementById('carousel-model-grid');
+  if (!grid || typeof MODELOS_CARROSSEL === 'undefined') return;
+
+  grid.innerHTML = Object.entries(MODELOS_CARROSSEL).map(([id, info]) => `
+    <button type="button" class="carousel-model-card" data-modelo="${id}">
+      <strong>${escapeHtml(info.label)}</strong>
+      <span>${escapeHtml(info.desc)}</span>
+    </button>
+  `).join('');
+
+  grid.addEventListener('click', (event) => {
+    const card = event.target.closest('[data-modelo]');
+    if (!card) return;
+    document.getElementById('modeloCarrossel').value = card.dataset.modelo;
+    marcarModeloCarrosselAtivo(card.dataset.modelo);
+    renderizarPreviewLayout();
+  });
+}
+
+function marcarModeloCarrosselAtivo(modelo) {
+  document.querySelectorAll('.carousel-model-card').forEach((card) => {
+    card.classList.toggle('is-active', card.dataset.modelo === modelo);
+  });
+}
+
+function atualizarAjudaMarca() {
+  const modo = document.getElementById('modoMarca')?.value || 'texto';
+  const grupo = document.getElementById('grupo-banner-marca');
+  if (grupo) grupo.classList.toggle('d-none', modo === 'texto' || modo === 'icone');
+}
+
+function alternarFundoHeader(tipo = 'cor') {
+  document.getElementById('fundoHeaderTipo').value = tipo;
+  document.querySelectorAll('[data-fundo-header]').forEach((botao) => {
+    botao.classList.toggle('is-active', botao.dataset.fundoHeader === tipo);
+  });
+  document.getElementById('painel-fundo-header-cor')?.classList.toggle('d-none', tipo !== 'cor');
+  document.getElementById('painel-fundo-header-imagem')?.classList.toggle('d-none', tipo !== 'imagem');
+  aplicarTemaPortal(lerTemaPreview());
+}
+
+function alternarFundoSite() {
+  const tipo = document.getElementById('fundoSiteTipo')?.value || 'padrao';
+  document.getElementById('painel-fundo-site-cor')?.classList.toggle('d-none', tipo !== 'cor');
+  document.getElementById('painel-fundo-site-imagem')?.classList.toggle('d-none', tipo !== 'imagem');
+  aplicarTemaPortal(lerTemaPreview());
+}
+
+function lerTemaPreview() {
+  return {
+    corPrincipal: document.getElementById('corPrincipal')?.value,
+    corAcento: document.getElementById('corAcento')?.value,
+    fundoHeaderTipo: document.getElementById('fundoHeaderTipo')?.value,
+    fundoHeaderCor: document.getElementById('fundoHeaderCor')?.value,
+    fundoHeaderImagemUrl: document.getElementById('preview-fundo-header')?.querySelector('img')?.src
+      || document.getElementById('fundoHeaderUrl')?.value
+      || '',
+    fundoHeaderOverlay: document.getElementById('fundoHeaderOverlay')?.value,
+    fundoSiteTipo: document.getElementById('fundoSiteTipo')?.value,
+    fundoSiteCor: document.getElementById('fundoSiteCor')?.value,
+    fundoSiteImagemUrl: document.getElementById('preview-fundo-site')?.querySelector('img')?.src
+      || document.getElementById('fundoSiteUrl')?.value
+      || '',
+    fundoSiteOverlay: document.getElementById('fundoSiteOverlay')?.value
+  };
+}
+
+function previewFundoHeaderUrl() {
+  const url = document.getElementById('fundoHeaderUrl')?.value.trim();
+  if (!url) return;
+  document.getElementById('remover-fundo-header').value = 'false';
+  alternarFundoHeader('imagem');
+  mostrarPreviewGenerico('preview-fundo-header', 'btn-remover-fundo-header', url, 'Fundo do header');
+  aplicarTemaPortal(lerTemaPreview());
+}
+
+function previewFundoSiteUrl() {
+  const url = document.getElementById('fundoSiteUrl')?.value.trim();
+  if (!url) return;
+  document.getElementById('remover-fundo-site').value = 'false';
+  document.getElementById('fundoSiteTipo').value = 'imagem';
+  alternarFundoSite();
+  mostrarPreviewGenerico('preview-fundo-site', 'btn-remover-fundo-site', url, 'Fundo do site');
+  aplicarTemaPortal(lerTemaPreview());
+}
+
+function previewBannerUrl() {
+  const url = document.getElementById('bannerMarcaUrl')?.value.trim();
+  if (!url) return;
+  document.getElementById('remover-banner-marca').value = 'false';
+  mostrarPreviewGenerico('preview-banner-marca', 'btn-remover-banner-marca', url, 'Banner da marca');
 }
 
 async function salvarCarrosselConfig() {
@@ -110,6 +310,17 @@ async function salvarConfig(event) {
   dados.set('limiteJogos', document.getElementById('limiteJogos').value);
   dados.set('limiteCarrossel', document.getElementById('limiteCarrossel').value);
   dados.set('temaCarrossel', document.getElementById('temaCarrossel').value);
+  dados.set('modeloCarrossel', document.getElementById('modeloCarrossel').value);
+  dados.set('alturaCarrossel', document.getElementById('alturaCarrossel').value);
+  dados.set('autoplayCarrossel', document.getElementById('autoplayCarrossel').value);
+  dados.set('mostrarResumoCarrossel', document.getElementById('mostrarResumoCarrossel').checked ? 'true' : 'false');
+  dados.set('mostrarMiniaturasCarrossel', document.getElementById('mostrarMiniaturasCarrossel').checked ? 'true' : 'false');
+  dados.set('mostrarDotsCarrossel', document.getElementById('mostrarDotsCarrossel').checked ? 'true' : 'false');
+  dados.set('mostrarContadorCarrossel', document.getElementById('mostrarContadorCarrossel').checked ? 'true' : 'false');
+  dados.set('mostrarSetasCarrossel', document.getElementById('mostrarSetasCarrossel').checked ? 'true' : 'false');
+  dados.set('modoMarca', document.getElementById('modoMarca').value);
+  dados.set('alturaBannerMarca', document.getElementById('alturaBannerMarca').value);
+  dados.set('mostrarTextoMarca', document.getElementById('mostrarTextoMarca').checked ? 'true' : 'false');
   dados.set('carrosselIds', JSON.stringify(carrosselSelecionados));
 
   try {
@@ -132,9 +343,7 @@ async function salvarConfig(event) {
     alert('Nao foi possivel salvar a selecao do carrossel.');
     return;
   }
-  document.documentElement.style.setProperty('--nav', configCache.corPrincipal);
-  document.documentElement.style.setProperty('--nav-dark', configCache.corPrincipal);
-  document.documentElement.style.setProperty('--accent', configCache.corAcento);
+  aplicarTemaPortal(configCache);
   carrosselSelecionados = [...(configCache.home?.carrosselIds || [])];
   renderizarPreviewLayout();
   renderizarSeletorCarrossel();
@@ -158,12 +367,103 @@ function renderizarPreviewLayout() {
   }).join('');
 
   const tema = document.getElementById('temaCarrossel')?.value === 'escuro' ? 'Escuro' : 'Claro';
+  const modelo = document.getElementById('modeloCarrossel')?.value || 'editorial';
+  const modeloLabel = MODELOS_CARROSSEL?.[modelo]?.label || modelo;
+  const altura = document.getElementById('alturaCarrossel')?.value || 'medio';
   const carrossel = document.getElementById('mostrarCarrossel')?.checked;
   const qtdCarrossel = carrosselSelecionados.length;
+  const controles = [
+    document.getElementById('mostrarDotsCarrossel')?.checked ? 'barras' : null,
+    document.getElementById('mostrarContadorCarrossel')?.checked ? 'numeros' : null,
+    document.getElementById('mostrarSetasCarrossel')?.checked ? 'setas' : null
+  ].filter(Boolean).join(', ') || 'nenhum';
   document.getElementById('preview-layout-home').innerHTML += `
     <div class="layout-meta">
-      <span>Carrossel: ${carrossel ? `ativo (${tema}, ${qtdCarrossel} selecionada(s))` : 'oculto'}</span>
+      <span>Carrossel: ${carrossel ? `ativo · ${modeloLabel} · ${tema} · altura ${altura} · ${qtdCarrossel} slide(s) · controles: ${controles}` : 'oculto'}</span>
+      <span>Marca: ${document.getElementById('modoMarca')?.value || 'texto'}</span>
       <span>Lista: ${document.getElementById('limiteNoticias')?.value || 6} por pagina</span>
+    </div>
+  `;
+}
+
+const WIDGETS_ADMIN_MAP = {
+  maisLidas: { prefix: 'widgetMaisLidas', label: 'Mais lidas' },
+  jogos: { prefix: 'widgetJogos', label: 'Agenda de jogos' },
+  enquete: { prefix: 'widgetEnquete', label: 'Enquete' }
+};
+
+function montarFormularioWidgetsAdmin() {
+  const grid = document.getElementById('widgets-admin-grid');
+  if (!grid || typeof LAYOUTS_WIDGET === 'undefined') return;
+
+  grid.innerHTML = Object.entries(WIDGETS_ADMIN_MAP).map(([chave, meta]) => {
+    const layouts = LAYOUTS_WIDGET[chave] || {};
+    const icones = Object.entries(ICONES_WIDGET).map(([id, info]) => (
+      `<option value="${id}">${escapeHtml(info.label)}</option>`
+    )).join('');
+    const layoutOptions = Object.entries(layouts).map(([id, info]) => (
+      `<option value="${id}">${escapeHtml(info.label)}</option>`
+    )).join('');
+
+    return `
+      <article class="widget-admin-card" data-widget-key="${chave}">
+        <h4>${escapeHtml(meta.label)}</h4>
+        <div class="mb-2">
+          <label class="form-label">Titulo</label>
+          <input type="text" class="form-control" id="${meta.prefix}Titulo" name="${meta.prefix}Titulo">
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Subtitulo</label>
+          <input type="text" class="form-control" id="${meta.prefix}Subtitulo" name="${meta.prefix}Subtitulo">
+        </div>
+        <div class="row g-2">
+          <div class="col-6">
+            <label class="form-label">Icone</label>
+            <select class="form-select" id="${meta.prefix}Icone" name="${meta.prefix}Icone">${icones}</select>
+          </div>
+          <div class="col-6">
+            <label class="form-label">Layout</label>
+            <select class="form-select" id="${meta.prefix}Layout" name="${meta.prefix}Layout">${layoutOptions}</select>
+          </div>
+        </div>
+        <div class="widget-admin-preview" id="${meta.prefix}Preview"></div>
+      </article>
+    `;
+  }).join('');
+
+  grid.querySelectorAll('select, input').forEach((campo) => {
+    campo.addEventListener('change', atualizarPreviewWidgetAdmin);
+    campo.addEventListener('input', atualizarPreviewWidgetAdmin);
+  });
+}
+
+function preencherFormularioWidgetsAdmin(config) {
+  const widgets = normalizarWidgetsConfig(config.home || {});
+  Object.entries(WIDGETS_ADMIN_MAP).forEach(([chave, meta]) => {
+    const cfg = widgets[chave];
+    document.getElementById(`${meta.prefix}Titulo`).value = cfg.titulo;
+    document.getElementById(`${meta.prefix}Subtitulo`).value = cfg.subtitulo;
+    document.getElementById(`${meta.prefix}Icone`).value = cfg.icone;
+    document.getElementById(`${meta.prefix}Layout`).value = cfg.layout;
+    atualizarPreviewWidgetAdmin({ target: document.getElementById(`${meta.prefix}Icone`) });
+  });
+}
+
+function atualizarPreviewWidgetAdmin(event) {
+  const card = event.target.closest('[data-widget-key]');
+  if (!card) return;
+  const chave = card.dataset.widgetKey;
+  const meta = WIDGETS_ADMIN_MAP[chave];
+  const preview = document.getElementById(`${meta.prefix}Preview`);
+  const icone = document.getElementById(`${meta.prefix}Icone`).value;
+  const layout = document.getElementById(`${meta.prefix}Layout`).value;
+  const titulo = document.getElementById(`${meta.prefix}Titulo`).value;
+  preview.innerHTML = `
+    <div class="widget-card widget-card--layout-${layout}">
+      <header class="widget-card__head">
+        ${htmlIconeWidget(icone)}
+        <div><h2>${escapeHtml(titulo)}</h2></div>
+      </header>
     </div>
   `;
 }
@@ -376,7 +676,7 @@ async function carregarListaAdmin() {
         <td>${escapeHtml(noticia.categoria || 'Geral')}</td>
         <td>${noticia.visualizacoes || 0}</td>
         <td class="text-end">
-          <a class="btn btn-outline-dark btn-sm" href="noticia.html?slug=${encodeURIComponent(noticia.slug || noticia.id)}" target="_blank">Abrir</a>
+          <a class="btn btn-outline-dark btn-sm" href="/noticia/${encodeURIComponent(noticia.slug || noticia.id)}" target="_blank">Abrir</a>
           <button type="button" class="btn btn-outline-secondary btn-sm" onclick="editarNoticia('${noticia.id}')">Editar</button>
           <button type="button" class="btn btn-outline-danger btn-sm" onclick="excluirNoticia('${noticia.id}')">Excluir</button>
         </td>
@@ -387,8 +687,84 @@ async function carregarListaAdmin() {
   }
 }
 
+function inicializarEditorTexto() {
+  if (!conteudoEditor || !editorToolbar) return;
+
+  editorToolbar.addEventListener('click', (event) => {
+    const botao = event.target.closest('[data-cmd]');
+    if (!botao) return;
+    event.preventDefault();
+
+    conteudoEditor.focus();
+    const cmd = botao.dataset.cmd;
+    const valor = botao.dataset.value || null;
+
+    if (cmd === 'createLink') {
+      const url = prompt('Informe a URL do link:');
+      if (url) document.execCommand('createLink', false, url);
+      return;
+    }
+
+    if (cmd === 'formatBlock' && valor) {
+      document.execCommand(cmd, false, valor);
+      return;
+    }
+
+    document.execCommand(cmd, false, valor);
+  });
+
+  conteudoEditor.addEventListener('input', sincronizarConteudoEditor);
+}
+
+function sincronizarConteudoEditor() {
+  if (!conteudoCampo || !conteudoEditor) return;
+  const texto = conteudoEditor.innerText.replace(/\u00a0/g, ' ').trim();
+  conteudoCampo.value = texto ? conteudoEditor.innerHTML.trim() : '';
+}
+
+function definirConteudoEditor(html = '') {
+  if (!conteudoEditor) return;
+  conteudoEditor.innerHTML = html || '';
+  sincronizarConteudoEditor();
+}
+
+function inicializarFonteImagem() {
+  document.querySelectorAll('[data-image-source]').forEach((botao) => {
+    botao.addEventListener('click', () => alternarFonteImagem(botao.dataset.imageSource));
+  });
+}
+
+function alternarFonteImagem(fonte = 'upload') {
+  fonteImagemAtual = fonte;
+  document.querySelectorAll('[data-image-source]').forEach((botao) => {
+    botao.classList.toggle('is-active', botao.dataset.imageSource === fonte);
+  });
+  document.getElementById('painel-imagem-upload')?.classList.toggle('d-none', fonte !== 'upload');
+  document.getElementById('painel-imagem-url')?.classList.toggle('d-none', fonte !== 'url');
+  if (fonte === 'upload' && inputImagemUrl) inputImagemUrl.value = '';
+  if (fonte === 'url' && inputImagem) inputImagem.value = '';
+}
+
+function atualizarPreviewUrl() {
+  const url = inputImagemUrl?.value.trim();
+  if (!url) {
+    if (removerImagem.value !== 'true') esconderPreviewImagem();
+    return;
+  }
+  removerImagem.value = 'false';
+  mostrarPreviewImagem(url, 'Imagem externa');
+}
+
 async function salvarNoticia(event) {
   event.preventDefault();
+  sincronizarConteudoEditor();
+
+  if (!conteudoCampo.value.trim()) {
+    alert('Preencha o texto da materia.');
+    conteudoEditor?.focus();
+    return;
+  }
+
   btnSubmit.disabled = true;
   btnSubmit.textContent = 'Salvando...';
 
@@ -396,6 +772,13 @@ async function salvarNoticia(event) {
   const dados = new FormData(form);
   dados.set('destaque', document.getElementById('destaque').checked ? 'true' : 'false');
   dados.set('removerImagem', removerImagem.value);
+
+  if (fonteImagemAtual === 'url') {
+    dados.delete('imagem');
+    dados.set('imagemUrl', inputImagemUrl?.value.trim() || '');
+  } else {
+    dados.delete('imagemUrl');
+  }
 
   try {
     const resposta = await fetch(id ? `/api/noticias/${id}` : '/api/noticias', {
@@ -424,7 +807,7 @@ function editarNoticia(id) {
   document.getElementById('noticia-id').value = noticia.id;
   document.getElementById('titulo').value = noticia.titulo || '';
   document.getElementById('resumo').value = noticia.resumo || '';
-  document.getElementById('conteudo').value = noticia.conteudo || noticia.resumo || '';
+  definirConteudoEditor(noticia.conteudo || noticia.resumo || '');
   document.getElementById('categoria').value = noticia.categoria || 'Geral';
   document.getElementById('autor').value = noticia.autor || 'Redacao';
   document.getElementById('tags').value = Array.isArray(noticia.tags) ? noticia.tags.join(', ') : '';
@@ -433,8 +816,15 @@ function editarNoticia(id) {
   removerImagem.value = 'false';
 
   if (noticia.imagemUrl) {
+    if (/^https?:\/\//i.test(noticia.imagemUrl)) {
+      alternarFonteImagem('url');
+      if (inputImagemUrl) inputImagemUrl.value = noticia.imagemUrl;
+    } else {
+      alternarFonteImagem('upload');
+    }
     mostrarPreviewImagem(noticia.imagemUrl, noticia.titulo);
   } else {
+    alternarFonteImagem('upload');
     esconderPreviewImagem();
   }
 
@@ -459,7 +849,9 @@ async function excluirNoticia(id) {
 function atualizarPreviewArquivo() {
   const arquivo = inputImagem.files && inputImagem.files[0];
   if (!arquivo) return;
+  alternarFonteImagem('upload');
   removerImagem.value = 'false';
+  if (inputImagemUrl) inputImagemUrl.value = '';
   mostrarPreviewImagem(URL.createObjectURL(arquivo), arquivo.name);
 }
 
@@ -477,6 +869,7 @@ function esconderPreviewImagem() {
 
 function marcarImagemParaRemocao() {
   inputImagem.value = '';
+  if (inputImagemUrl) inputImagemUrl.value = '';
   removerImagem.value = 'true';
   esconderPreviewImagem();
 }
@@ -488,6 +881,8 @@ function limparFormulario() {
   document.getElementById('autor').value = 'Redacao';
   document.getElementById('status').value = 'publicado';
   removerImagem.value = 'false';
+  alternarFonteImagem('upload');
+  definirConteudoEditor('');
   esconderPreviewImagem();
   tituloForm.textContent = 'Nova noticia';
   btnSubmit.textContent = 'Publicar noticia';

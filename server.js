@@ -4,6 +4,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const multer = require('multer');
 const session = require('express-session');
+const seo = require('./lib/seo');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -20,6 +21,7 @@ const PATH_PLANTOES = path.join(DATA_DIR, 'plantoes.json');
 const USUARIO_ADMIN = process.env.ADMIN_USER || 'admin';
 const SENHA_ADMIN = process.env.ADMIN_PASSWORD || '12345';
 
+app.set('trust proxy', 1);
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -64,6 +66,18 @@ async function garantirEstrutura() {
     corPrincipal: '#2f3a44',
     corAcento: '#0f766e',
     logoUrl: '',
+    bannerMarcaUrl: '',
+    modoMarca: 'texto',
+    alturaBannerMarca: 52,
+    mostrarTextoMarca: true,
+    fundoHeaderTipo: 'cor',
+    fundoHeaderCor: '',
+    fundoHeaderImagemUrl: '',
+    fundoHeaderOverlay: 35,
+    fundoSiteTipo: 'padrao',
+    fundoSiteCor: '#f7f8fa',
+    fundoSiteImagemUrl: '',
+    fundoSiteOverlay: 0,
     imagemPadraoUrl: '',
     home: {
       mostrarTicker: true,
@@ -77,6 +91,19 @@ async function garantirEstrutura() {
       limiteJogos: 3,
       limiteCarrossel: 5,
       temaCarrossel: 'claro',
+      modeloCarrossel: 'editorial',
+      alturaCarrossel: 'medio',
+      autoplayCarrossel: 6,
+      mostrarResumoCarrossel: true,
+      mostrarMiniaturasCarrossel: true,
+      mostrarContadorCarrossel: true,
+      mostrarSetasCarrossel: true,
+      mostrarDotsCarrossel: true,
+      widgets: {
+        maisLidas: { titulo: 'Mais lidas', subtitulo: 'As materias com maior audiencia', icone: 'grafico', layout: 'lista' },
+        jogos: { titulo: 'Agenda de jogos', subtitulo: 'Proximos confrontos e placares', icone: 'bola', layout: 'cards' },
+        enquete: { titulo: 'Enquete', subtitulo: 'Participe da pesquisa do portal', icone: 'enquete', layout: 'barras' }
+      },
       carrosselIds: []
     }
   });
@@ -136,6 +163,13 @@ function normalizarBoolean(valor) {
   return valor === true || valor === 'true' || valor === 'on' || valor === '1';
 }
 
+function resolverImagemNoticia(req, imagemAtual = '') {
+  if (req.file) return `/uploads/${req.file.filename}`;
+  const urlExterna = String(req.body.imagemUrl || '').trim();
+  if (urlExterna) return urlExterna;
+  return imagemAtual;
+}
+
 function lerBooleanConfig(valor, padrao = true) {
   if (valor === undefined || valor === null || valor === '') return padrao;
   return normalizarBoolean(valor);
@@ -185,14 +219,74 @@ function noticiaPublicavel(noticia) {
   return noticia.status !== 'rascunho';
 }
 
+const MODELOS_CARROSSEL_VALIDOS = new Set([
+  'editorial', 'fullscreen', 'compacto', 'split', 'filmstrip', 'magazine'
+]);
+const ALTURAS_CARROSSEL_VALIDAS = new Set(['baixo', 'medio', 'alto', 'extra']);
+const MODOS_MARCA_VALIDOS = new Set(['texto', 'icone', 'banner', 'icone_banner']);
+const FUNDOS_TIPO_VALIDOS = new Set(['cor', 'imagem']);
+const FUNDOS_SITE_TIPO_VALIDOS = new Set(['padrao', 'cor', 'imagem']);
+const ICONES_WIDGET_VALIDOS = new Set([
+  'sem', 'grafico', 'fogo', 'estrela', 'bola', 'trofeu', 'enquete', 'megafone', 'raio', 'relogio', 'lista'
+]);
+const LAYOUTS_WIDGET_VALIDOS = {
+  maisLidas: new Set(['lista', 'compacto', 'cards']),
+  jogos: new Set(['cards', 'linha', 'tabela']),
+  enquete: new Set(['barras', 'classic', 'minimal'])
+};
+
+function normalizarWidgets(home = {}) {
+  const padroes = {
+    maisLidas: { titulo: 'Mais lidas', subtitulo: 'As materias com maior audiencia', icone: 'grafico', layout: 'lista' },
+    jogos: { titulo: 'Agenda de jogos', subtitulo: 'Proximos confrontos e placares', icone: 'bola', layout: 'cards' },
+    enquete: { titulo: 'Enquete', subtitulo: 'Participe da pesquisa do portal', icone: 'enquete', layout: 'barras' }
+  };
+  const entrada = home.widgets || {};
+  const widgets = {};
+
+  Object.entries(padroes).forEach(([chave, padrao]) => {
+    const atual = entrada[chave] || {};
+    widgets[chave] = {
+      titulo: String(atual.titulo || padrao.titulo).slice(0, 80),
+      subtitulo: String(atual.subtitulo || padrao.subtitulo).slice(0, 120),
+      icone: ICONES_WIDGET_VALIDOS.has(atual.icone) ? atual.icone : padrao.icone,
+      layout: LAYOUTS_WIDGET_VALIDOS[chave]?.has(atual.layout) ? atual.layout : padrao.layout
+    };
+  });
+
+  return widgets;
+}
+
 function normalizarConfig(config = {}) {
+  const modeloCarrossel = MODELOS_CARROSSEL_VALIDOS.has(config.home?.modeloCarrossel)
+    ? config.home.modeloCarrossel
+    : 'editorial';
+  const alturaCarrossel = ALTURAS_CARROSSEL_VALIDAS.has(config.home?.alturaCarrossel)
+    ? config.home.alturaCarrossel
+    : 'medio';
+  const modoMarca = MODOS_MARCA_VALIDOS.has(config.modoMarca) ? config.modoMarca : 'texto';
+
   return {
     nomePortal: config.nomePortal || 'Portal Noticias',
     slogan: config.slogan || 'Informacao clara, direta e em tempo real',
     corPrincipal: config.corPrincipal || '#2f3a44',
     corAcento: config.corAcento || '#0f766e',
     logoUrl: config.logoUrl || '',
+    bannerMarcaUrl: config.bannerMarcaUrl || '',
+    modoMarca,
+    alturaBannerMarca: Math.min(Math.max(Number(config.alturaBannerMarca) || 52, 28), 120),
+    mostrarTextoMarca: config.mostrarTextoMarca !== false,
+    fundoHeaderTipo: FUNDOS_TIPO_VALIDOS.has(config.fundoHeaderTipo) ? config.fundoHeaderTipo : 'cor',
+    fundoHeaderCor: config.fundoHeaderCor || '',
+    fundoHeaderImagemUrl: config.fundoHeaderImagemUrl || '',
+    fundoHeaderOverlay: Math.min(Math.max(Number(config.fundoHeaderOverlay) || 35, 0), 85),
+    fundoSiteTipo: FUNDOS_SITE_TIPO_VALIDOS.has(config.fundoSiteTipo) ? config.fundoSiteTipo : 'padrao',
+    fundoSiteCor: config.fundoSiteCor || '#f7f8fa',
+    fundoSiteImagemUrl: config.fundoSiteImagemUrl || '',
+    fundoSiteOverlay: Math.min(Math.max(Number(config.fundoSiteOverlay) || 0, 0), 85),
     imagemPadraoUrl: config.imagemPadraoUrl || '',
+    siteUrl: config.siteUrl || '',
+    seoDescricao: config.seoDescricao || '',
     home: {
       mostrarTicker: config.home?.mostrarTicker !== false,
       mostrarBusca: config.home?.mostrarBusca !== false,
@@ -205,6 +299,15 @@ function normalizarConfig(config = {}) {
       limiteJogos: Math.max(Number(config.home?.limiteJogos) || 3, 1),
       limiteCarrossel: Math.min(Math.max(Number(config.home?.limiteCarrossel) || 5, 1), 5),
       temaCarrossel: config.home?.temaCarrossel === 'escuro' ? 'escuro' : 'claro',
+      modeloCarrossel,
+      alturaCarrossel,
+      autoplayCarrossel: Math.min(Math.max(Number(config.home?.autoplayCarrossel) || 6, 3), 20),
+      mostrarResumoCarrossel: config.home?.mostrarResumoCarrossel !== false,
+      mostrarMiniaturasCarrossel: config.home?.mostrarMiniaturasCarrossel !== false,
+      mostrarContadorCarrossel: config.home?.mostrarContadorCarrossel !== false,
+      mostrarSetasCarrossel: config.home?.mostrarSetasCarrossel !== false,
+      mostrarDotsCarrossel: config.home?.mostrarDotsCarrossel !== false,
+      widgets: normalizarWidgets(config.home),
       carrosselIds: Array.isArray(config.home?.carrosselIds)
         ? config.home.carrosselIds.map(String).filter(Boolean)
         : []
@@ -267,15 +370,136 @@ const upload = multer({
   }
 });
 
-app.use(exigirLoginPagina);
-app.use(express.static(PUBLIC_DIR));
+const htmlTemplates = {};
 
-app.get('/', (req, res) => {
-  res.sendFile('index.html', { root: PUBLIC_DIR }, (err) => {
-    if (err) {
-      res.status(404).json({ erro: 'Pagina inicial nao encontrada.' });
-    }
-  });
+async function carregarTemplateHtml(arquivo) {
+  if (!htmlTemplates[arquivo]) {
+    htmlTemplates[arquivo] = await fs.readFile(path.join(PUBLIC_DIR, arquivo), 'utf8');
+  }
+  return htmlTemplates[arquivo];
+}
+
+async function servirHtmlComSeo(res, arquivo, metaHtml) {
+  const template = await carregarTemplateHtml(arquivo);
+  const html = template.includes('<!-- PORTAL_SEO -->')
+    ? template.replace('<!-- PORTAL_SEO -->', metaHtml)
+    : template.replace('</head>', `  ${metaHtml}\n</head>`);
+  res.type('html').send(html);
+}
+
+app.use(exigirLoginPagina);
+
+app.get('/robots.txt', async (req, res) => {
+  const config = normalizarConfig(await lerJSON(PATH_CONFIG, {}));
+  const base = seo.getBaseUrl(req, config);
+  res.type('text/plain').send(
+    `User-agent: *\nAllow: /\nDisallow: /admin.html\nDisallow: /login.html\nDisallow: /api/\n\nSitemap: ${seo.urlAbsoluta(base, '/sitemap.xml')}\n`
+  );
+});
+
+app.get('/sitemap.xml', async (req, res) => {
+  const config = normalizarConfig(await lerJSON(PATH_CONFIG, {}));
+  const base = seo.getBaseUrl(req, config);
+  const noticias = (await lerJSON(PATH_NOTICIAS, []))
+    .map((item) => normalizarNoticia(item))
+    .filter(noticiaPublicavel)
+    .sort((a, b) => new Date(b.data) - new Date(a.data));
+  const categorias = [...new Set(noticias.map((item) => item.categoria || 'Geral'))];
+
+  const entradas = [
+    { loc: seo.urlAbsoluta(base, '/'), changefreq: 'hourly', priority: '1.0' },
+    ...categorias.map((nome) => ({
+      loc: seo.urlAbsoluta(base, `/categoria/${seo.slugifyCategoria(nome)}`),
+      changefreq: 'daily',
+      priority: '0.7'
+    })),
+    ...noticias.map((item) => ({
+      loc: seo.urlAbsoluta(base, `/noticia/${encodeURIComponent(item.slug || item.id)}`),
+      lastmod: item.data,
+      changefreq: 'weekly',
+      priority: '0.8'
+    }))
+  ];
+
+  const corpo = entradas.map((entrada) => {
+    const lastmod = entrada.lastmod
+      ? `<lastmod>${new Date(entrada.lastmod).toISOString().slice(0, 10)}</lastmod>`
+      : '';
+    return `  <url>\n    <loc>${seo.escapeHtml(entrada.loc)}</loc>\n    ${lastmod}\n    <changefreq>${entrada.changefreq}</changefreq>\n    <priority>${entrada.priority}</priority>\n  </url>`;
+  }).join('\n');
+
+  res.type('application/xml').send(
+    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${corpo}\n</urlset>`
+  );
+});
+
+app.get('/noticia.html', (req, res) => {
+  const slug = req.query.slug || req.query.id;
+  if (slug) {
+    return res.redirect(301, `/noticia/${encodeURIComponent(slug)}`);
+  }
+  res.redirect(302, '/');
+});
+
+app.get('/noticia/:slug', async (req, res) => {
+  const config = normalizarConfig(await lerJSON(PATH_CONFIG, {}));
+  const base = seo.getBaseUrl(req, config);
+  const noticias = (await lerJSON(PATH_NOTICIAS, [])).map((item) => normalizarNoticia(item));
+  const noticia = noticias.find((item) => (
+    String(item.slug) === String(req.params.slug) || String(item.id) === String(req.params.slug)
+  ));
+
+  if (!noticia || (!noticiaPublicavel(noticia) && !estaLogado(req))) {
+    const meta = seo.buildMetaTags({
+      title: `Noticia nao encontrada | ${config.nomePortal}`,
+      description: 'A materia solicitada nao esta disponivel.',
+      canonical: seo.urlAbsoluta(base, `/noticia/${encodeURIComponent(req.params.slug)}`),
+      siteName: config.nomePortal,
+      noindex: true
+    });
+    res.status(404);
+    return servirHtmlComSeo(res, 'noticia.html', meta);
+  }
+
+  return servirHtmlComSeo(res, 'noticia.html', seo.metaNoticia(noticia, config, base));
+});
+
+app.get('/categoria/:slug', async (req, res) => {
+  const config = normalizarConfig(await lerJSON(PATH_CONFIG, {}));
+  const base = seo.getBaseUrl(req, config);
+  const noticias = (await lerJSON(PATH_NOTICIAS, []))
+    .map((item) => normalizarNoticia(item))
+    .filter(noticiaPublicavel);
+  const nomeCategoria = seo.encontrarNomeCategoria(noticias, req.params.slug);
+  const total = nomeCategoria
+    ? noticias.filter((item) => seo.categoriaCombina(item, req.params.slug)).length
+    : 0;
+
+  if (!nomeCategoria) {
+    const meta = seo.buildMetaTags({
+      title: `Categoria nao encontrada | ${config.nomePortal}`,
+      description: 'Nenhuma materia publicada nesta categoria.',
+      canonical: seo.urlAbsoluta(base, `/categoria/${encodeURIComponent(req.params.slug)}`),
+      siteName: config.nomePortal,
+      noindex: true
+    });
+    res.status(404);
+    return servirHtmlComSeo(res, 'categoria.html', meta);
+  }
+
+  return servirHtmlComSeo(
+    res,
+    'categoria.html',
+    seo.metaCategoria(nomeCategoria, config, base, total)
+  );
+});
+
+app.use(express.static(PUBLIC_DIR, { index: false }));
+
+app.get('/', async (req, res) => {
+  const config = normalizarConfig(await lerJSON(PATH_CONFIG, {}));
+  const base = seo.getBaseUrl(req, config);
+  return servirHtmlComSeo(res, 'index.html', seo.metaHome(config, base));
 });
 
 app.post('/api/login', (req, res) => {
@@ -299,11 +523,29 @@ app.get('/api/config', async (req, res) => {
   res.json(normalizarConfig(await lerJSON(PATH_CONFIG, {})));
 });
 
+function resolverBannerMarca(req, atual = '') {
+  if (req.files?.bannerMarca?.[0]) return `/uploads/${req.files.bannerMarca[0].filename}`;
+  const urlExterna = String(req.body.bannerMarcaUrl || '').trim();
+  if (urlExterna) return urlExterna;
+  return atual;
+}
+
+function resolverFundoImagem(req, campoArquivo, campoUrl, atual = '') {
+  if (req.files?.[campoArquivo]?.[0]) return `/uploads/${req.files[campoArquivo][0].filename}`;
+  const urlExterna = String(req.body[campoUrl] || '').trim();
+  if (urlExterna) return urlExterna;
+  return atual;
+}
+
 app.put('/api/config', exigirLoginAPI, upload.fields([
   { name: 'logo', maxCount: 1 },
+  { name: 'bannerMarca', maxCount: 1 },
+  { name: 'fundoHeader', maxCount: 1 },
+  { name: 'fundoSite', maxCount: 1 },
   { name: 'imagemPadrao', maxCount: 1 }
 ]), async (req, res) => {
   const atual = normalizarConfig(await lerJSON(PATH_CONFIG, {}));
+  const modoMarca = MODOS_MARCA_VALIDOS.has(req.body.modoMarca) ? req.body.modoMarca : atual.modoMarca;
   const config = {
     ...atual,
     nomePortal: req.body.nomePortal || atual.nomePortal,
@@ -311,6 +553,18 @@ app.put('/api/config', exigirLoginAPI, upload.fields([
     corPrincipal: req.body.corPrincipal || atual.corPrincipal,
     corAcento: req.body.corAcento || atual.corAcento,
     logoUrl: req.files?.logo?.[0] ? `/uploads/${req.files.logo[0].filename}` : atual.logoUrl,
+    bannerMarcaUrl: resolverBannerMarca(req, atual.bannerMarcaUrl),
+    modoMarca,
+    alturaBannerMarca: Math.min(Math.max(Number(req.body.alturaBannerMarca) || atual.alturaBannerMarca, 28), 120),
+    mostrarTextoMarca: lerBooleanConfig(req.body.mostrarTextoMarca, atual.mostrarTextoMarca),
+    fundoHeaderTipo: FUNDOS_TIPO_VALIDOS.has(req.body.fundoHeaderTipo) ? req.body.fundoHeaderTipo : atual.fundoHeaderTipo,
+    fundoHeaderCor: req.body.fundoHeaderCor || '',
+    fundoHeaderImagemUrl: resolverFundoImagem(req, 'fundoHeader', 'fundoHeaderUrl', atual.fundoHeaderImagemUrl),
+    fundoHeaderOverlay: Math.min(Math.max(Number(req.body.fundoHeaderOverlay) || atual.fundoHeaderOverlay, 0), 85),
+    fundoSiteTipo: FUNDOS_SITE_TIPO_VALIDOS.has(req.body.fundoSiteTipo) ? req.body.fundoSiteTipo : atual.fundoSiteTipo,
+    fundoSiteCor: req.body.fundoSiteCor || atual.fundoSiteCor,
+    fundoSiteImagemUrl: resolverFundoImagem(req, 'fundoSite', 'fundoSiteUrl', atual.fundoSiteImagemUrl),
+    fundoSiteOverlay: Math.min(Math.max(Number(req.body.fundoSiteOverlay) || atual.fundoSiteOverlay, 0), 85),
     imagemPadraoUrl: req.files?.imagemPadrao?.[0] ? `/uploads/${req.files.imagemPadrao[0].filename}` : atual.imagemPadraoUrl,
     home: {
       mostrarTicker: lerBooleanConfig(req.body.mostrarTicker, atual.home.mostrarTicker),
@@ -324,6 +578,38 @@ app.put('/api/config', exigirLoginAPI, upload.fields([
       limiteJogos: Math.max(Number(req.body.limiteJogos) || atual.home.limiteJogos, 1),
       limiteCarrossel: Math.min(Math.max(Number(req.body.limiteCarrossel) || atual.home.limiteCarrossel, 1), 5),
       temaCarrossel: req.body.temaCarrossel === 'escuro' ? 'escuro' : 'claro',
+      modeloCarrossel: MODELOS_CARROSSEL_VALIDOS.has(req.body.modeloCarrossel)
+        ? req.body.modeloCarrossel
+        : atual.home.modeloCarrossel,
+      alturaCarrossel: ALTURAS_CARROSSEL_VALIDAS.has(req.body.alturaCarrossel)
+        ? req.body.alturaCarrossel
+        : atual.home.alturaCarrossel,
+      autoplayCarrossel: Math.min(Math.max(Number(req.body.autoplayCarrossel) || atual.home.autoplayCarrossel, 3), 20),
+      mostrarResumoCarrossel: lerBooleanConfig(req.body.mostrarResumoCarrossel, atual.home.mostrarResumoCarrossel),
+      mostrarMiniaturasCarrossel: lerBooleanConfig(req.body.mostrarMiniaturasCarrossel, atual.home.mostrarMiniaturasCarrossel),
+      mostrarContadorCarrossel: lerBooleanConfig(req.body.mostrarContadorCarrossel, atual.home.mostrarContadorCarrossel),
+      mostrarSetasCarrossel: lerBooleanConfig(req.body.mostrarSetasCarrossel, atual.home.mostrarSetasCarrossel),
+      mostrarDotsCarrossel: lerBooleanConfig(req.body.mostrarDotsCarrossel, atual.home.mostrarDotsCarrossel),
+      widgets: {
+        maisLidas: {
+          titulo: req.body.widgetMaisLidasTitulo || atual.home.widgets.maisLidas.titulo,
+          subtitulo: req.body.widgetMaisLidasSubtitulo || atual.home.widgets.maisLidas.subtitulo,
+          icone: ICONES_WIDGET_VALIDOS.has(req.body.widgetMaisLidasIcone) ? req.body.widgetMaisLidasIcone : atual.home.widgets.maisLidas.icone,
+          layout: LAYOUTS_WIDGET_VALIDOS.maisLidas.has(req.body.widgetMaisLidasLayout) ? req.body.widgetMaisLidasLayout : atual.home.widgets.maisLidas.layout
+        },
+        jogos: {
+          titulo: req.body.widgetJogosTitulo || atual.home.widgets.jogos.titulo,
+          subtitulo: req.body.widgetJogosSubtitulo || atual.home.widgets.jogos.subtitulo,
+          icone: ICONES_WIDGET_VALIDOS.has(req.body.widgetJogosIcone) ? req.body.widgetJogosIcone : atual.home.widgets.jogos.icone,
+          layout: LAYOUTS_WIDGET_VALIDOS.jogos.has(req.body.widgetJogosLayout) ? req.body.widgetJogosLayout : atual.home.widgets.jogos.layout
+        },
+        enquete: {
+          titulo: req.body.widgetEnqueteTitulo || atual.home.widgets.enquete.titulo,
+          subtitulo: req.body.widgetEnqueteSubtitulo || atual.home.widgets.enquete.subtitulo,
+          icone: ICONES_WIDGET_VALIDOS.has(req.body.widgetEnqueteIcone) ? req.body.widgetEnqueteIcone : atual.home.widgets.enquete.icone,
+          layout: LAYOUTS_WIDGET_VALIDOS.enquete.has(req.body.widgetEnqueteLayout) ? req.body.widgetEnqueteLayout : atual.home.widgets.enquete.layout
+        }
+      },
       carrosselIds: req.body.carrosselIds !== undefined && String(req.body.carrosselIds).trim() !== ''
         ? parseCarrosselIds(req.body.carrosselIds).slice(0, 5)
         : atual.home.carrosselIds
@@ -331,6 +617,9 @@ app.put('/api/config', exigirLoginAPI, upload.fields([
   };
 
   if (normalizarBoolean(req.body.removerLogo)) config.logoUrl = '';
+  if (normalizarBoolean(req.body.removerBannerMarca)) config.bannerMarcaUrl = '';
+  if (normalizarBoolean(req.body.removerFundoHeader)) config.fundoHeaderImagemUrl = '';
+  if (normalizarBoolean(req.body.removerFundoSite)) config.fundoSiteImagemUrl = '';
   if (normalizarBoolean(req.body.removerImagemPadrao)) config.imagemPadraoUrl = '';
 
   await salvarJSON(PATH_CONFIG, config);
@@ -399,7 +688,7 @@ app.get('/api/noticias', async (req, res) => {
     const filtradas = base.filter((noticia) => {
       const texto = `${noticia.titulo} ${noticia.resumo} ${noticia.conteudo} ${noticia.categoria} ${(noticia.tags || []).join(' ')}`.toLowerCase();
       const bateBusca = !termo || texto.includes(termo);
-      const bateCategoria = !categoria || String(noticia.categoria || '').toLowerCase() === categoria;
+      const bateCategoria = !categoria || seo.categoriaCombina(noticia, categoria);
       return bateBusca && bateCategoria;
     });
     const ordenadas = [...filtradas].sort((a, b) => new Date(b.data) - new Date(a.data));
@@ -462,7 +751,7 @@ app.post('/api/noticias', exigirLoginAPI, upload.single('imagem'), async (req, r
       status: req.body.status === 'rascunho' ? 'rascunho' : 'publicado',
       destaqueCarousel: normalizarBoolean(req.body.destaque),
       data: new Date().toISOString(),
-      imagemUrl: req.file ? `/uploads/${req.file.filename}` : '',
+      imagemUrl: resolverImagemNoticia(req),
       visualizacoes: 0
     };
 
@@ -493,7 +782,7 @@ app.put('/api/noticias/:id', exigirLoginAPI, upload.single('imagem'), async (req
       tags: String(req.body.tags || '').split(',').map((tag) => tag.trim()).filter(Boolean),
       status: req.body.status === 'rascunho' ? 'rascunho' : 'publicado',
       destaqueCarousel: normalizarBoolean(req.body.destaque),
-      imagemUrl: req.file ? `/uploads/${req.file.filename}` : (removerImagem ? '' : noticias[idx].imagemUrl)
+      imagemUrl: removerImagem ? '' : resolverImagemNoticia(req, noticias[idx].imagemUrl)
     };
 
     await salvarJSON(PATH_NOTICIAS, noticias);

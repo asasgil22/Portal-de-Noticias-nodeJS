@@ -39,14 +39,23 @@ async function carregarConfig() {
 
   const config = estadoHome.config;
   document.title = config.nomePortal || 'Portal Noticias';
-  document.documentElement.style.setProperty('--nav', config.corPrincipal || '#111418');
-  document.documentElement.style.setProperty('--nav-dark', config.corPrincipal || '#000000');
-  document.documentElement.style.setProperty('--accent', config.corAcento || '#0f766e');
-  document.getElementById('brand-link').innerHTML = config.logoUrl
-    ? `<img class="brand-logo" src="${config.logoUrl}" alt="${escapeHtml(config.nomePortal)}"><span>${escapeHtml(config.nomePortal)}</span>`
-    : escapeHtml(config.nomePortal || 'Portal Noticias');
-
+  aplicarMetaSeo({
+    title: config.nomePortal || 'Portal Noticias',
+    description: config.slogan || config.seoDescricao || `Noticias em tempo real no ${config.nomePortal || 'portal'}.`,
+    canonical: urlAbsoluta('/'),
+    image: imagemAbsoluta(config.logoUrl, config.imagemPadraoUrl),
+    siteName: config.nomePortal || 'Portal Noticias',
+    type: 'website'
+  });
+  aplicarTemaPortal(config);
+  renderizarMarca(config, document.getElementById('brand-link'));
+  aplicarConfigWidgets(config);
   aplicarLayoutHome(config);
+}
+
+function layoutWidget(chave) {
+  return normalizarWidgetsConfig(estadoHome.config?.home || {})[chave]?.layout
+    || WIDGET_PADROES[chave]?.layout;
 }
 
 function aplicarLayoutHome(config = estadoHome.config) {
@@ -78,7 +87,9 @@ function aplicarLayoutHome(config = estadoHome.config) {
 function alternarBloco(selector, mostrar, painelInteiro = false) {
   const el = document.querySelector(selector);
   if (!el) return;
-  const alvo = painelInteiro ? el.closest('.side-panel') : el;
+  const alvo = painelInteiro
+    ? (el.closest('.widget-card') || el.closest('.side-panel'))
+    : el;
   if (alvo) alvo.classList.toggle('d-none', !mostrar);
 }
 
@@ -143,7 +154,7 @@ async function carregarNoticias(pagina = 1) {
 }
 
 function urlNoticia(noticia) {
-  return `noticia.html?slug=${encodeURIComponent(noticia.slug || noticia.id)}`;
+  return `/noticia/${encodeURIComponent(noticia.slug || noticia.id)}`;
 }
 
 function mediaNoticia(noticia, classe, fallbackClasse) {
@@ -154,137 +165,12 @@ function mediaNoticia(noticia, classe, fallbackClasse) {
 }
 
 function renderizarCarousel(destaques) {
-  const section = document.getElementById('carousel-section');
-  if (!destaques.length) {
-    section.innerHTML = '';
-    return;
-  }
-
-  const total = destaques.length;
-  const temaClaro = estadoHome.config?.home?.temaCarrossel !== 'escuro';
-  const classeTema = temaClaro ? 'hero-carousel--light' : 'hero-carousel--dark';
-
-  section.innerHTML = `
-    <section class="hero-carousel ${classeTema}" aria-label="Destaques do portal" data-autoplay="6000">
-      <div class="hero-carousel__stage">
-        ${destaques.map((noticia, index) => `
-          <article class="hero-carousel__slide ${index === 0 ? 'is-active' : ''}" data-index="${index}">
-            <a class="hero-carousel__link" href="${urlNoticia(noticia)}">
-              <div class="hero-carousel__media">
-                ${mediaNoticia(noticia, 'hero-carousel__img', 'hero-carousel__fallback')}
-              </div>
-              <div class="hero-carousel__overlay">
-                <span class="hero-carousel__kicker">${escapeHtml(noticia.categoria || 'Geral')}</span>
-                <h2 class="hero-carousel__title">${escapeHtml(noticia.titulo)}</h2>
-                <p class="hero-carousel__excerpt">${escapeHtml(noticia.resumo || '')}</p>
-                <span class="hero-carousel__cta">Ler materia</span>
-              </div>
-            </a>
-          </article>
-        `).join('')}
-      </div>
-
-      <div class="hero-carousel__chrome">
-        <div class="hero-carousel__toolbar">
-          <div class="hero-carousel__progress" aria-hidden="true">
-            ${destaques.map((_, index) => `
-              <button type="button" class="hero-carousel__dot ${index === 0 ? 'is-active' : ''}" data-go="${index}" aria-label="Ir para destaque ${index + 1}"></button>
-            `).join('')}
-          </div>
-          <div class="hero-carousel__controls">
-            <span class="hero-carousel__counter"><strong>01</strong> / ${String(total).padStart(2, '0')}</span>
-            <button type="button" class="hero-carousel__btn" data-dir="prev" aria-label="Destaque anterior">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
-            <button type="button" class="hero-carousel__btn" data-dir="next" aria-label="Proximo destaque">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
-          </div>
-        </div>
-
-        <div class="hero-carousel__thumbs">
-          ${destaques.map((noticia, index) => `
-            <button type="button" class="hero-carousel__thumb ${index === 0 ? 'is-active' : ''}" data-go="${index}">
-              <span class="hero-carousel__thumb-media">
-                ${mediaNoticia(noticia, 'hero-carousel__thumb-img', 'hero-carousel__thumb-fallback')}
-              </span>
-              <span class="hero-carousel__thumb-copy">
-                <span class="hero-carousel__thumb-kicker">${escapeHtml(noticia.categoria || 'Geral')}</span>
-                <strong>${escapeHtml(noticia.titulo)}</strong>
-              </span>
-            </button>
-          `).join('')}
-        </div>
-      </div>
-    </section>
-  `;
-
-  inicializarCarouselHero(section.querySelector('.hero-carousel'));
-}
-
-function inicializarCarouselHero(carousel) {
-  if (!carousel || carousel.dataset.ready === 'true') return;
-
-  const slides = [...carousel.querySelectorAll('.hero-carousel__slide')];
-  const dots = [...carousel.querySelectorAll('.hero-carousel__dot')];
-  const thumbs = [...carousel.querySelectorAll('.hero-carousel__thumb')];
-  const counter = carousel.querySelector('.hero-carousel__counter strong');
-  const intervalo = Number(carousel.dataset.autoplay) || 6000;
-  let indice = 0;
-  let timer = null;
-
-  carousel.style.setProperty('--hero-autoplay', `${intervalo}ms`);
-
-  function irPara(novoIndice) {
-    indice = (novoIndice + slides.length) % slides.length;
-    slides.forEach((slide, i) => slide.classList.toggle('is-active', i === indice));
-    dots.forEach((dot, i) => {
-      const ativo = i === indice;
-      dot.classList.toggle('is-active', ativo);
-      if (ativo) {
-        dot.classList.remove('is-animating');
-        void dot.offsetWidth;
-        dot.classList.add('is-animating');
-      } else {
-        dot.classList.remove('is-animating');
-      }
-    });
-    thumbs.forEach((thumb, i) => thumb.classList.toggle('is-active', i === indice));
-    if (counter) counter.textContent = String(indice + 1).padStart(2, '0');
-    reiniciarTimer();
-  }
-
-  function reiniciarTimer() {
-    if (timer) clearTimeout(timer);
-    carousel.classList.remove('is-paused');
-    timer = setTimeout(() => irPara(indice + 1), intervalo);
-  }
-
-  carousel.addEventListener('click', (event) => {
-    const alvo = event.target.closest('[data-dir], [data-go]');
-    if (!alvo || alvo.tagName === 'A') return;
-
-    if (alvo.dataset.dir === 'prev') irPara(indice - 1);
-    if (alvo.dataset.dir === 'next') irPara(indice + 1);
-    if (alvo.dataset.go !== undefined) irPara(Number(alvo.dataset.go));
-  });
-
-  carousel.addEventListener('mouseenter', () => {
-    carousel.classList.add('is-paused');
-    if (timer) clearTimeout(timer);
-  });
-
-  carousel.addEventListener('mouseleave', reiniciarTimer);
-
-  carousel.addEventListener('keydown', (event) => {
-    if (event.key === 'ArrowLeft') irPara(indice - 1);
-    if (event.key === 'ArrowRight') irPara(indice + 1);
-  });
-
-  carousel.setAttribute('tabindex', '0');
-  carousel.dataset.ready = 'true';
-  dots[indice]?.classList.add('is-animating');
-  reiniciarTimer();
+  renderizarCarrosselPortal(
+    document.getElementById('carousel-section'),
+    destaques,
+    estadoHome.config,
+    { escapeHtml, urlNoticia, mediaNoticia }
+  );
 }
 
 function renderizarLista(noticias) {
@@ -345,10 +231,9 @@ async function carregarTickerETrending() {
       }).join('')
       : '<span>Nenhum plantao ativo no momento.</span>';
 
+    const layout = layoutWidget('maisLidas');
     document.getElementById('mais-lidas').innerHTML = maisLidas.length
-      ? maisLidas.map((noticia) => (
-        `<a class="side-link" href="${urlNoticia(noticia)}">${escapeHtml(noticia.titulo)}</a>`
-      )).join('')
+      ? renderizarMaisLidas(maisLidas, layout)
       : '<div class="empty-box">Sem leituras ainda.</div>';
   } catch {
     document.getElementById('mais-lidas').innerHTML = '<div class="empty-box">Erro ao carregar.</div>';
@@ -370,17 +255,7 @@ async function carregarWidgetJogos() {
       return;
     }
 
-    alvo.innerHTML = agenda.map((jogo, index) => `
-      <div class="game-box ${index > 0 ? 'mt-2' : ''}">
-        <div class="small text-secondary text-uppercase fw-bold">${escapeHtml(jogo.campeonato)}</div>
-        <div class="teams my-2">
-          <span>${escapeHtml(jogo.mandante)}</span>
-          <span>${jogo.placarMandante ?? '-'} x ${jogo.placarVisitante ?? '-'}</span>
-          <span>${escapeHtml(jogo.visitante)}</span>
-        </div>
-        <div class="small text-secondary">${formatarData(jogo.dataHora)}</div>
-      </div>
-    `).join('');
+    alvo.innerHTML = renderizarJogos(agenda, layoutWidget('jogos'));
   } catch {
     alvo.innerHTML = '<div class="empty-box">Erro ao carregar jogos.</div>';
   }
@@ -392,18 +267,7 @@ async function carregarWidgetEnquete() {
     const resposta = await fetch('/api/enquete');
     const enquete = await resposta.json();
     const total = Object.values(enquete.opcoes || {}).reduce((soma, votos) => soma + votos, 0);
-    alvo.innerHTML = `
-      <p class="fw-bold">${escapeHtml(enquete.pergunta)}</p>
-      ${Object.entries(enquete.opcoes || {}).map(([opcao, votos]) => {
-        const pct = total ? Math.round((votos / total) * 100) : 0;
-        return `
-          <button class="poll-option" type="button" onclick="votar('${escapeAttr(opcao)}')">
-            ${escapeHtml(opcao)}
-            <span class="float-end">${pct}%</span>
-          </button>
-        `;
-      }).join('')}
-    `;
+    alvo.innerHTML = renderizarEnquete(enquete, total, layoutWidget('enquete'));
   } catch {
     alvo.innerHTML = '<div class="empty-box">Erro ao carregar enquete.</div>';
   }
@@ -416,6 +280,111 @@ async function votar(opcao) {
     body: JSON.stringify({ opcao })
   });
   carregarWidgetEnquete();
+}
+
+function renderizarMaisLidas(noticias, layout = 'lista') {
+  if (layout === 'compacto') {
+    return noticias.map((noticia) => (
+      `<a class="trending-item trending-item--compact" href="${urlNoticia(noticia)}">
+        <strong>${escapeHtml(noticia.titulo)}</strong>
+        <small>${noticia.visualizacoes || 0} views</small>
+      </a>`
+    )).join('');
+  }
+
+  if (layout === 'cards') {
+    return noticias.map((noticia, index) => (
+      `<a class="trending-card" href="${urlNoticia(noticia)}">
+        <span class="trending-card__rank">${index + 1}</span>
+        <span class="trending-card__title">${escapeHtml(noticia.titulo)}</span>
+        <span class="trending-card__meta">${escapeHtml(noticia.categoria || 'Geral')}</span>
+      </a>`
+    )).join('');
+  }
+
+  return noticias.map((noticia, index) => (
+    `<a class="trending-item" href="${urlNoticia(noticia)}">
+      <span class="trending-rank">${index + 1}</span>
+      <span class="trending-copy">
+        <strong>${escapeHtml(noticia.titulo)}</strong>
+        <small>${escapeHtml(noticia.categoria || 'Geral')} · ${noticia.visualizacoes || 0} views</small>
+      </span>
+    </a>`
+  )).join('');
+}
+
+function renderizarJogos(jogos, layout = 'cards') {
+  if (layout === 'linha') {
+    return jogos.map((jogo) => `
+      <article class="game-line">
+        <span class="game-line__league">${escapeHtml(jogo.campeonato)}</span>
+        <span class="game-line__team">${escapeHtml(jogo.mandante)}</span>
+        <span class="game-line__score">${jogo.placarMandante ?? '-'} x ${jogo.placarVisitante ?? '-'}</span>
+        <span class="game-line__team">${escapeHtml(jogo.visitante)}</span>
+        <time>${formatarData(jogo.dataHora)}</time>
+      </article>
+    `).join('');
+  }
+
+  if (layout === 'tabela') {
+    return `
+      <table class="game-table">
+        <thead><tr><th>Jogo</th><th>Placar</th><th>Data</th></tr></thead>
+        <tbody>
+          ${jogos.map((jogo) => `
+            <tr>
+              <td><strong>${escapeHtml(jogo.mandante)} x ${escapeHtml(jogo.visitante)}</strong><br><small>${escapeHtml(jogo.campeonato)}</small></td>
+              <td>${jogo.placarMandante ?? '-'} x ${jogo.placarVisitante ?? '-'}</td>
+              <td>${formatarData(jogo.dataHora)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  return jogos.map((jogo) => `
+    <article class="game-card">
+      <div class="game-card__league">${escapeHtml(jogo.campeonato)}</div>
+      <div class="game-card__match">
+        <span class="game-card__team">${escapeHtml(jogo.mandante)}</span>
+        <span class="game-card__score">${jogo.placarMandante ?? '-'}<small>x</small>${jogo.placarVisitante ?? '-'}</span>
+        <span class="game-card__team">${escapeHtml(jogo.visitante)}</span>
+      </div>
+      <time class="game-card__date">${formatarData(jogo.dataHora)}</time>
+    </article>
+  `).join('');
+}
+
+function renderizarEnquete(enquete, total, layout = 'barras') {
+  const opcoes = Object.entries(enquete.opcoes || {});
+  const botoes = opcoes.map(([opcao, votos]) => {
+    const pct = total ? Math.round((votos / total) * 100) : 0;
+    if (layout === 'classic') {
+      return `<button class="poll-option poll-option--classic" type="button" onclick="votar('${escapeAttr(opcao)}')">${escapeHtml(opcao)}</button>`;
+    }
+    if (layout === 'minimal') {
+      return `
+        <button class="poll-option poll-option--minimal" type="button" onclick="votar('${escapeAttr(opcao)}')">
+          <span>${escapeHtml(opcao)}</span>
+          <strong>${pct}%</strong>
+        </button>
+      `;
+    }
+    return `
+      <button class="poll-option" type="button" onclick="votar('${escapeAttr(opcao)}')">
+        <span class="poll-option__label">${escapeHtml(opcao)}</span>
+        <span class="poll-option__bar"><span style="width:${pct}%"></span></span>
+        <span class="poll-option__pct">${pct}%</span>
+      </button>
+    `;
+  }).join('');
+
+  return `
+    <p class="poll-question">${escapeHtml(enquete.pergunta)}</p>
+    <div class="poll-options poll-options--${layout}">${botoes}</div>
+    <p class="poll-total">${total} voto(s)</p>
+  `;
 }
 
 function formatarData(data) {

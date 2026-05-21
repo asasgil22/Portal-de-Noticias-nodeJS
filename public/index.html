@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Portal Noticias</title>
+  <!-- PORTAL_SEO -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
@@ -15,10 +15,7 @@
 
   <nav class="navbar navbar-expand-lg glass-nav sticky-top">
     <div class="container">
-      <a class="navbar-brand brand-lockup" href="index.html" id="brand-link">Portal Noticias</a>
-      <div class="ms-auto d-flex gap-2">
-        <a href="admin.html" class="btn btn-outline-light btn-sm">Admin</a>
-      </div>
+      <a class="navbar-brand brand-lockup" href="/" id="brand-link">Portal Noticias</a>
     </div>
   </nav>
 
@@ -52,20 +49,20 @@
       </section>
 
       <aside class="col-lg-4" id="sidebar-home">
-        <div class="sticky-sidebar">
-          <section class="side-panel mb-3">
-            <h2>Mais lidas</h2>
-            <div id="mais-lidas"></div>
+        <div class="sticky-sidebar widgets-stack">
+          <section class="widget-card" data-widget="mais-lidas">
+            <header class="widget-card__head"></header>
+            <div class="widget-card__body" id="mais-lidas"></div>
           </section>
 
-          <section class="side-panel mb-3">
-            <h2>Agenda de jogos</h2>
-            <div id="widget-jogos"></div>
+          <section class="widget-card" data-widget="jogos">
+            <header class="widget-card__head"></header>
+            <div class="widget-card__body" id="widget-jogos"></div>
           </section>
 
-          <section class="side-panel mb-3">
-            <h2>Enquete</h2>
-            <div id="widget-enquete"></div>
+          <section class="widget-card" data-widget="enquete">
+            <header class="widget-card__head"></header>
+            <div class="widget-card__body" id="widget-enquete"></div>
           </section>
         </div>
       </aside>
@@ -73,6 +70,11 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/portal-theme.js"></script>
+  <script src="js/portal-brand.js"></script>
+  <script src="js/carrossel.js"></script>
+  <script src="js/widgets-config.js"></script>
+  <script src="js/seo.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>

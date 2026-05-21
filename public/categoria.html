@@ -11,19 +11,23 @@
   <nav class="navbar navbar-expand-lg glass-nav sticky-top">
     <div class="container">
       <a class="navbar-brand brand-lockup" href="/" id="brand-link">Portal Noticias</a>
-      <a href="/" class="btn btn-outline-light btn-sm">Voltar</a>
+      <a href="/" class="btn btn-outline-light btn-sm">Inicio</a>
     </div>
   </nav>
 
   <main class="container py-4">
-    <article id="noticia-detalhe" class="article-shell">
-      <div class="loading-box">Carregando noticia...</div>
-    </article>
+    <header class="section-heading mb-4">
+      <span id="categoria-titulo">Categoria</span>
+      <small id="categoria-contador"></small>
+    </header>
+    <div id="lista-categoria" class="news-list">
+      <div class="loading-box">Carregando noticias...</div>
+    </div>
   </main>
 
   <script src="/js/portal-theme.js"></script>
   <script src="/js/portal-brand.js"></script>
   <script src="/js/seo.js"></script>
-  <script src="/js/noticia.js"></script>
+  <script src="/js/categoria.js"></script>
 </body>
 </html>
